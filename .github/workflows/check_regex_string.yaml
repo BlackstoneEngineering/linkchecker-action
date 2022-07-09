@@ -1,0 +1,103 @@
+# Scan site for specific pattern match regex string
+# for example API Keys, Secrets, etc...
+name: Secret Checker
+
+env:
+  WEBSITE_URL: www.YOURWEBSITEHERE.com
+
+on:
+  # schedule:
+  #   # Automatic Schedule trigger
+  #   # Run every week
+  #   - cron: '0 0 * * 0'
+  #   # Run on 1st day of every month
+  #   - cron: '0 0 1 * *'
+  workflow_dispatch:
+    # Manual trigger
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+
+jobs:
+  website-checker:
+    name: ${{env.WEBSITE_URL}} Secret Check
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: git checkout repo
+        uses: actions/checkout@v2
+      - name: Setup Environment
+        run: |
+          sudo apt-get install python3
+          pip3 install git+https://github.com/linkchecker/linkchecker.git
+          mkdir ./logs
+        # Change WarningRegex below to match the pattern of your secret
+      - run: |
+          cat >./linkcheck-config.md <<EOL
+          [RegexCheck]
+          warningregex=([=, ,',",:][0-9]{1,10}\/\w{80})
+          EOL
+
+      - name: Scan Site
+        # run: 'linkchecker --no-warnings -t 100 -o html --ignore-url /internal/.* $WEBSITE_URL > ./logs/$WEBSITE_URL.html'
+
+        # Check WEBSITE_URL, add ignore paths, output to txt. Use linkcheck-config to flag text that matches the regex
+        run: |
+          linkchecker \
+            --config=./linkcheck-config.md \
+            -t 2000 \
+            -o text \
+            --ignore-url /internal/* \
+            --ignore-url /some_other_directory/~.* \
+            --ignore-url /*\.extension \
+            --verbose \
+            $WEBSITE_URL > ./logs/$WEBSITE_URL.txt
+        # continue-on-error: true
+
+        # Pull out all the regex matched secrets
+      - name: Check Regex
+        run: |
+          cat >./logs/regex.py << EOL
+          #!python
+          # Argv[0] contains file name
+
+          import sys
+          import re
+          pattern = r"([=, ,',\",:][0-9]{1,10}\/\w{80})"
+
+          results = [re.findall(pattern,line) for line in open(sys.argv[1]) if line]
+          results2 = [e for e in results if e]
+
+          if results2 ==[]:
+            print 0
+          else:
+            print results2
+          EOL
+
+          chmod 777 ./logs/regex.py
+
+          echo KEYS=$(python ./logs/regex.py ./logs/$WEBSITE_URL.txt) >> $GITHUB_ENV
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        if: ${{ always() }}
+        with:
+          name: ${{WEBSITE_URL}}
+          path: ./logs/${{WEBSITE_URL}}.txt
+
+      ## Slack Notification 
+      # - name: Slack Notification
+      #   uses: rtCamp/action-slack-notify@v2
+      #   if: ${{ env.KEYS != 0 }}
+      #   env:
+      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      #     SLACK_CHANNEL: channel_name
+      #     SLACK_USERNAME: Secret Checker
+      #     SLACK_TITLE: WARNING - ${{WEBSITE_URL}} security leak - Secret detected!!!
+      #     MSG_MINIMAL: true
+      #     SLACK_ICON_EMOJI: ':failed:'
+      #     SLACK_MESSAGE: |
+      #       Keys Found: ${{ env.KEYS }}'
+      #       APIKey leak detected on ${{WEBSITE_URL}}. Please see report artifact.
