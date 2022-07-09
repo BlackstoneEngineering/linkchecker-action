@@ -8,7 +8,7 @@ See the scripts in the `.github/workflows` directory.
 
 At the top of the file insert the full url for the website you want to scan. 
 
-```
+```sh
 env:
   WEBSITE_URL: www.YOURWEBSITEHERE.com
 ```
@@ -34,7 +34,7 @@ I suggest setting up a Slack notification or similar so your team can get notifi
 
 The only configuration available is the link paths to ignore. It is common for various link paths to be either internal access only, or be valid if logged in but invalid to the general public. Links like these will be 404 to the general public, even if they are actually valid if logged in. The solution is to simply ignore those paths. 
 
-```
+```sh
 - name: Check Links
         run: |
           linkchecker \
@@ -63,10 +63,12 @@ I strongly suggest setting up a slack notification or email blast to notify your
 
 Change the regular expression to match the format of the secrets / api keys your organization uses. 
 
-```
+```regex
 warningregex=([=, ,',",:][0-9]{1,10}\/\w{80})
-...
-pattern = r"([=, ,',\",:][0-9]{1,10}\/\w{80})"
 ```
+and
+```python
+pattern = r"([=, ,',\",:][0-9]{1,10}\/\w{80})"
+````
 
 The built in regex is for API Keys of the format `123456789/abcdefg.....` which is fairly common. Please modify this to match your use case. 
