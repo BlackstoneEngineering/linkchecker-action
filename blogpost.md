@@ -43,7 +43,7 @@ This will run the scan and create an `scanresults.html` file with the scanlog. T
 
 The output file may appear confusing at first, but it's actually quite simple.
 
-TODO: INSERT IMAGE HERE
+![output_log](img/output_log.png)
 
 - **URL** - This is the URL that is broken.
 - **Name** - This is the link text that is shown on the page.
@@ -110,29 +110,29 @@ Note that there are two actions in this repo:
 
 There are a couple of things to configure in this script before use.
 1. Change the website to scan to your website
-```yaml
-	env:
-  		WEBSITE_URL: www.YOURWEBSITEHERE.com
-```
+	```yaml
+    env:
+      WEBSITE_URL: www.YOURWEBSITEHERE.com
+	```
 1. Modify command with ignore url's. 
-```yaml
-      - name: Check Links
-        run: |
-          linkchecker \
-            --no-warnings  \
-            -t 100 \
-            -o html \
-            --ignore-url /internal/* \
-            --ignore-url /some_other_directory/~.* \
-            --ignore-url /*\.extension \
-            $WEBSITE_URL > ./logs/$WEBSITE_URL.html
-```
+	```yaml
+	      - name: Check Links
+	        run: |
+	          linkchecker \
+	            --no-warnings  \
+	            -t 100 \
+	            -o html \
+	            --ignore-url /internal/* \
+	            --ignore-url /some_other_directory/~.* \
+	            --ignore-url /*\.extension \
+	            $WEBSITE_URL > ./logs/$WEBSITE_URL.html
+	```
 1. Set the schedule. I have configured it to run every month. 
-```yaml
-  schedule:
-    # Run on 1st day of every month
-    - cron: '0 0 1 * *'
-```
+	```yaml
+	  schedule:
+	    # Run on 1st day of every month
+	    - cron: '0 0 1 * *'
+	```
 1. Optional - enable Slack integration. This involves uncommenting the commented out code at the bottom and adding a repo secret for `SLACK_WEBHOOK`. If enabled this will ping a slack channel called `channel_name` with the broken links as well as a link to the output results. 
 
 Alternatively I suggest setting up an email notification or integrating with Jira issues. 
