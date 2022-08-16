@@ -15,8 +15,6 @@ env:
 
 Then run the script manually from the github actions tab.
 
-TODO: Insert Image Here
-
 ## Link Checker
 The `check_broken_links.yaml` file will scan a designated website looking for links that 404 and report them. The way to use this script is to run the script and then view the artifact that is uploaded to github.
 
